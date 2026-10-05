@@ -1,0 +1,17 @@
+node_modules/
+.pnp
+.pnp.js
+coverage/
+.next/
+out/
+build/
+dist/
+.env
+.env*.local
+n8n/data/
+pgdata/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
