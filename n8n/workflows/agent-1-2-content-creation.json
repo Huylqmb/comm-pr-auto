@@ -1,0 +1,142 @@
+{
+  "name": "Agent 1 & 2 - Content & Visual Creation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-post",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1040,
+        -336
+      ],
+      "id": "f89e1d65-7416-4abd-b559-61884398cbdb",
+      "name": "Webhook",
+      "webhookId": "57f55524-3983-46a2-9821-071ee345da92"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-goog-api-key",
+              "value": "YOUR_GEMINI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Bạn là chuyên gia PR & Social Media Marketing cao cấp. Dựa vào thông tin sau:\\n- Chủ đề: {{ $json.body.topic }}\\n- Đối tượng: {{ $json.body.target_audience }}\\n- Tông giọng: {{ $json.body.tone }}\\n- Nền tảng: {{ $json.body.platform }}\\n\\nHãy tạo bài viết và đề xuất prompt ảnh. Yêu cầu trả về JSON có cấu trúc chính xác sau:\\n{\\n  \\\"headline\\\": \\\"Tiêu đề bài viết ngắn gọn, hấp dẫn\\\",\\n  \\\"body\\\": \\\"Nội dung chính của bài viết, chia đoạn mạch lạc\\\",\\n  \\\"cta\\\": \\\"Câu kêu gọi hành động (Call To Action)\\\",\\n  \\\"hashtags\\\": [\\\"#tag1\\\", \\\"#tag2\\\", \\\"#tag3\\\"],\\n  \\\"image_prompt\\\": \\\"Một câu prompt chi tiết bằng TIẾNG ANH mô tả hình ảnh quảng bá phù hợp, commercial photography, high quality\\\"\\n}\"\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"response_mime_type\": \"application/json\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -816,
+        -336
+      ],
+      "id": "4bfcad58-4b92-48f3-86a3-38161c2add74",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Trích xuất text phản hồi từ Gemini\nconst responseText = $input.first().json.candidates[0].content.parts[0].text;\nconst aiData = JSON.parse(responseText);\n\n// 2. Lấy lại postId được gửi từ Webhook ban đầu\nconst webhookData = $('Webhook').first().json.body;\n\n// 3. Ghép prompt tiếng Anh vào Pollinations.ai API (Agent 2)\nconst promptEncoded = encodeURIComponent(aiData.image_prompt);\nconst bannerUrl = `https://image.pollinations.ai/prompt/${promptEncoded}?width=1200&height=630&nologo=true`;\n\n// 4. Định dạng bài viết PR hoàn chỉnh\nconst fullContent = `${aiData.headline}\\n\\n${aiData.body}\\n\\n👉 ${aiData.cta}\\n\\n${aiData.hashtags.join(' ')}`;\n\nreturn {\n  json: {\n    postId: webhookData.postId,\n    headline: aiData.headline,\n    body: aiData.body,\n    cta: aiData.cta,\n    hashtags: aiData.hashtags,\n    fullContent: fullContent,\n    imagePrompt: aiData.image_prompt,\n    bannerUrl: bannerUrl\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        -336
+      ],
+      "id": "6f3a9493-02d8-4f59-88d4-68515001bfd1",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/api/webhooks/n8n-callback",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "ontent-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"postId\": \"={{ $json.postId }}\",\n  \"content\": \"={{ $json.fullContent }}\",\n  \"bannerUrl\": \"={{ $json.bannerUrl }}\",\n  \"headline\": \"={{ $json.headline }}\",\n  \"status\": \"PENDING_APPROVAL\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -368,
+        -336
+      ],
+      "id": "d4e3032f-7e18-40fd-81c1-d89cc70df2fe",
+      "name": "HTTP Request1",
+      "retryOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d8059fc1-9d95-44b4-b887-95e7acf886f9",
+  "meta": {
+    "instanceId": "bfafdb94da84bc8a255e27ebd09ae14d1907cbeef0f1088b3716a3ac05175d34"
+  },
+  "nodeGroups": [],
+  "id": "pmvOaedkUtkSPyC1",
+  "tags": []
+}
