@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+  REJECTED
+  CRISIS_ALERT
+}
+
+enum SentimentType {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  CRISIS
+}
+
+model Campaign {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+}
+
+model Post {
+  id             String      @id @default(uuid())
+  campaignId     String?
+  campaign       Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  topic          String
+  targetAudience String?
+  tone           String?
+  platform       String      @default("Facebook")
+  headline       String?
+  content        String?     @db.Text
+  bannerUrl      String?     @db.Text
+  status         PostStatus  @default(DRAFT)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  comments       Comment[]
+}
+
+model Comment {
+  id        String         @id @default(uuid())
+  postId    String
+  post      Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    String
+  text      String         @db.Text
+  sentiment SentimentType  @default(NEUTRAL)
+  replyText String?        @db.Text
+  createdAt DateTime       @default(now())
+}
