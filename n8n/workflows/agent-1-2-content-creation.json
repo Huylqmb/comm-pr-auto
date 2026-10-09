@@ -1,22 +1,118 @@
 {
-  "name": "Agent 1 & 2 - Content & Visual Creation",
+  "name": "Agent 1 & 2 - 12 Steps Workflow",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "generate-post",
-        "responseMode": "lastNode",
+        "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -1040,
-        -336
+        -400,
+        96
       ],
-      "id": "f89e1d65-7416-4abd-b559-61884398cbdb",
+      "id": "d8fda213-c1d9-4939-a5a5-afd954de2499",
       "name": "Webhook",
-      "webhookId": "57f55524-3983-46a2-9821-071ee345da92"
+      "webhookId": "ef05ceec-bc52-425c-8a9e-83b452a409c2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "3f315cab-70ad-42be-94b6-379c601e6a69",
+              "leftValue": "={{ $json.body.topic }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -176,
+        96
+      ],
+      "id": "b8a9ec9e-bbce-4638-88db-7ce63ac65692",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": false, \"message\": \"Topic is required\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        48,
+        192
+      ],
+      "id": "8dab4877-4067-45fa-aeea-8ef3f4ab251a",
+      "name": "Respond to Webhook (Error)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "postId",
+              "value": "={{ $('Webhook').first().json.body.postId }}",
+              "type": "string"
+            },
+            {
+              "name": "cleanTopic",
+              "value": "={{ $('Webhook').first().json.body.topic.trim() }}",
+              "type": "string"
+            },
+            {
+              "name": "targetAudience",
+              "value": "={{ $('Webhook').first().json.body.target_audience || 'Đại chúng' }}",
+              "type": "string"
+            },
+            {
+              "name": "tone",
+              "value": "={{ $('Webhook').first().json.body.tone || 'Chuyên nghiệp' }}",
+              "type": "string"
+            },
+            {
+              "name": "platform",
+              "value": "={{ $('Webhook').first().json.body.platform || 'Facebook' }}",
+              "type": "string"
+            },
+            {
+              "name": "startedAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        48,
+        0
+      ],
+      "id": "72331c14-9730-49c9-b3f7-d909dc316834",
+      "name": "Edit Fields"
     },
     {
       "parameters": {
@@ -37,63 +133,208 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Bạn là chuyên gia PR & Social Media Marketing cao cấp. Dựa vào thông tin sau:\\n- Chủ đề: {{ $json.body.topic }}\\n- Đối tượng: {{ $json.body.target_audience }}\\n- Tông giọng: {{ $json.body.tone }}\\n- Nền tảng: {{ $json.body.platform }}\\n\\nHãy tạo bài viết và đề xuất prompt ảnh. Yêu cầu trả về JSON có cấu trúc chính xác sau:\\n{\\n  \\\"headline\\\": \\\"Tiêu đề bài viết ngắn gọn, hấp dẫn\\\",\\n  \\\"body\\\": \\\"Nội dung chính của bài viết, chia đoạn mạch lạc\\\",\\n  \\\"cta\\\": \\\"Câu kêu gọi hành động (Call To Action)\\\",\\n  \\\"hashtags\\\": [\\\"#tag1\\\", \\\"#tag2\\\", \\\"#tag3\\\"],\\n  \\\"image_prompt\\\": \\\"Một câu prompt chi tiết bằng TIẾNG ANH mô tả hình ảnh quảng bá phù hợp, commercial photography, high quality\\\"\\n}\"\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"response_mime_type\": \"application/json\"\n  }\n}",
-        "options": {}
+        "jsonBody": "{\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"Bạn là chuyên gia PR & Social Media Marketing. Viết bài cho chủ đề: {{ $json.cleanTopic }}, Đối tượng: {{ $json.targetAudience }}, Tông giọng: {{ $json.tone }}, Nền tảng: {{ $json.platform }}. Trả về ĐÚNG cấu trúc JSON sau (không dùng markdown khác):\\n{\\n  \\\"headline\\\": \\\"Tiêu đề bài viết ngắn gọn\\\",\\n  \\\"body\\\": \\\"Nội dung chính\\\",\\n  \\\"cta\\\": \\\"Kêu gọi hành động\\\",\\n  \\\"hashtags\\\": [\\\"#tag1\\\", \\\"#tag2\\\"],\\n  \\\"image_prompt\\\": \\\"1 câu prompt tiếng Anh mô tả ảnh quảng bá phù hợp\\\"\\n}\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"response_mime_type\": \"application/json\"\n  }\n}",
+        "options": {
+          "timeout": 15000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        -816,
-        -336
+        272,
+        0
       ],
-      "id": "4bfcad58-4b92-48f3-86a3-38161c2add74",
-      "name": "HTTP Request"
+      "id": "95613b88-5c1e-4743-a151-e5cec51e7c29",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "jsCode": "// 1. Trích xuất text phản hồi từ Gemini\nconst responseText = $input.first().json.candidates[0].content.parts[0].text;\nconst aiData = JSON.parse(responseText);\n\n// 2. Lấy lại postId được gửi từ Webhook ban đầu\nconst webhookData = $('Webhook').first().json.body;\n\n// 3. Ghép prompt tiếng Anh vào Pollinations.ai API (Agent 2)\nconst promptEncoded = encodeURIComponent(aiData.image_prompt);\nconst bannerUrl = `https://image.pollinations.ai/prompt/${promptEncoded}?width=1200&height=630&nologo=true`;\n\n// 4. Định dạng bài viết PR hoàn chỉnh\nconst fullContent = `${aiData.headline}\\n\\n${aiData.body}\\n\\n👉 ${aiData.cta}\\n\\n${aiData.hashtags.join(' ')}`;\n\nreturn {\n  json: {\n    postId: webhookData.postId,\n    headline: aiData.headline,\n    body: aiData.body,\n    cta: aiData.cta,\n    hashtags: aiData.hashtags,\n    fullContent: fullContent,\n    imagePrompt: aiData.image_prompt,\n    bannerUrl: bannerUrl\n  }\n};"
+        "jsCode": "const rawText = $input.first().json.candidates?.[0]?.content?.parts?.[0]?.text || '{}';\nlet parsed = {};\ntry {\n  parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim());\n} catch (e) {\n  parsed = { error: true, raw: rawText };\n}\n\nconst meta = $('Edit Fields').first().json;\n\nreturn {\n  json: {\n    ...meta,\n    aiData: parsed,\n    isValid: Boolean(parsed.headline && parsed.body)\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -592,
-        -336
+        496,
+        0
       ],
-      "id": "6f3a9493-02d8-4f59-88d4-68515001bfd1",
-      "name": "Code in JavaScript"
+      "id": "857e6e0c-df6a-4d15-b5d1-4eb7a90cabd8",
+      "name": "Parse & Clean JSON"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "1ca604e1-24c4-4a3b-a73e-6dc099c01e7b",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        0
+      ],
+      "id": "7106e36b-fe4b-404b-bd15-a577a5c5853a",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn {\n  json: {\n    ...item,\n    aiData: {\n      headline: `[Cập nhật] Chiến dịch: ${item.cleanTopic}`,\n      body: `Nội dung đang được ban truyền thông biên tập chi tiết cho chiến dịch ${item.cleanTopic}.`,\n      cta: 'Theo dõi để nhận thông tin mới nhất!',\n      hashtags: ['#PRUpdate', '#Campaign2026'],\n      image_prompt: 'Professional corporate banner marketing modern minimal high resolution'\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        80
+      ],
+      "id": "51e1853d-4aec-4a79-955e-a017a0290e4c",
+      "name": "Code in JavaScript (Fallback)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst ai = data.aiData;\n\nconst promptEncoded = encodeURIComponent(ai.image_prompt || 'modern advertising banner');\nconst bannerUrl = `https://image.pollinations.ai/prompt/${promptEncoded}?width=1200&height=630&nologo=true`;\nconst fullContent = `${ai.headline}\\n\\n${ai.body}\\n\\n👉 ${ai.cta}\\n\\n${(ai.hashtags || []).join(' ')}`;\n\nreturn {\n  json: {\n    postId: data.postId,\n    topic: data.cleanTopic,\n    headline: ai.headline,\n    fullContent: fullContent,\n    bannerUrl: bannerUrl,\n    imagePrompt: ai.image_prompt,\n    platform: data.platform\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        0
+      ],
+      "id": "9fe99125-3413-4ade-9ae5-3b1760fbb7e3",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "status",
+              "value": "PENDING_APPROVAL",
+              "type": "string"
+            },
+            {
+              "name": "processedBy",
+              "value": "n8n-multi-agent-system",
+              "type": "string"
+            },
+            {
+              "name": "completedAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "3208f8f6-26a5-4bf3-a7a7-5f7534ebb6f1",
+      "name": "Edit Fields1",
+      "includeOtherFields": true
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:5000/api/webhooks/n8n-callback",
+        "url": "http://172.17.0.1:5000/api/webhooks/n8n-callback",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "ontent-Type",
+              "name": "Content-Type",
               "value": "application/json"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"postId\": \"={{ $json.postId }}\",\n  \"content\": \"={{ $json.fullContent }}\",\n  \"bannerUrl\": \"={{ $json.bannerUrl }}\",\n  \"headline\": \"={{ $json.headline }}\",\n  \"status\": \"PENDING_APPROVAL\"\n}",
-        "options": {}
+        "jsonBody": "={{ JSON.stringify({\n  postId: $json.postId,\n  content: $json.fullContent,\n  bannerUrl: $json.bannerUrl,\n  headline: $json.headline,\n  status: 'PENDING_APPROVAL'\n}) }}",
+        "options": {
+          "timeout": 15000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        -368,
-        -336
+        1616,
+        0
       ],
-      "id": "d4e3032f-7e18-40fd-81c1-d89cc70df2fe",
+      "id": "bafe8905-d81e-48c3-815c-8475aed37bef",
       "name": "HTTP Request1",
-      "retryOnFail": true
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  success: true,\n  message: 'Workflow executed successfully via 12-step pipeline',\n  postId: $('Edit Fields1').first().json.postId,\n  bannerUrl: $('Edit Fields1').first().json.bannerUrl\n}) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1840,
+        0
+      ],
+      "id": "cdf86033-c4cb-432c-9980-645b0fdf9d18",
+      "name": "Respond to Webhook1"
     }
   ],
-  "pinData": {},
   "connections": {
     "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook (Error)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
       "main": [
         [
           {
@@ -108,14 +349,65 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Parse & Clean JSON",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript": {
+    "Parse & Clean JSON": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript (Fallback)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript (Fallback)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
       "main": [
         [
           {
@@ -125,18 +417,22 @@
           }
         ]
       ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
-  },
-  "versionId": "d8059fc1-9d95-44b4-b887-95e7acf886f9",
-  "meta": {
-    "instanceId": "bfafdb94da84bc8a255e27ebd09ae14d1907cbeef0f1088b3716a3ac05175d34"
-  },
-  "nodeGroups": [],
-  "id": "pmvOaedkUtkSPyC1",
-  "tags": []
+  }
 }
