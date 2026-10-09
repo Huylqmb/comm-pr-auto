@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import postRoutes from './routes/postRoutes.js';
+import approvalRoutes from './routes/approvalRoutes.js';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
 });
 
+app.use('/api', approvalRoutes);
 app.use('/api/posts', postRoutes);
 
 app.listen(PORT, '0.0.0.0', () => {

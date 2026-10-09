@@ -63,7 +63,7 @@ export const generatePost = async (req, res) => {
     });
 
     // 2. Kích hoạt Webhook n8n (Agent 1 & Agent 2)
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook-test/generate-post';
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/generate-post';
 
     axios.post(n8nWebhookUrl, {
       postId: newPost.id,
